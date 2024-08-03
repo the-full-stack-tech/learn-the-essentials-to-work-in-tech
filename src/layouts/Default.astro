@@ -1,0 +1,211 @@
+---
+import { ViewTransitions } from "astro:transitions";
+import { $display, initializeDisplay } from "@/store/display";
+import { generateIndex } from "@/utils/generateIndex";
+import Header from "@/components/ui/Header/Index.vue";
+import Pagination from "@/components/Pagination.astro";
+import Sidebar from "@/components/ui/Sidebar/Index.vue";
+import Breadcrumbs from "@/components/ui/Breadcrumbs/Index.vue";
+const { frontmatter, headings, file } = Astro.props;
+
+const { pathname } = Astro.url;
+const allPages = await Astro.glob("@/pages/**/*.{md,mdx}");
+const listItemsMenu = generateIndex(allPages, pathname, true);
+
+console.log("listItemsMenu", JSON.stringify(listItemsMenu, null, 2));
+
+initializeDisplay();
+---
+
+<!doctype html>
+<html lang="es" class="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <ViewTransitions />
+    <title>{frontmatter.title} - Guía de Programación</title>
+  </head>
+  <body>
+    <div class="wrapper">
+      <Header title={frontmatter.title} client:only="vue" />
+      <Breadcrumbs
+        pathname={pathname}
+        listItemsMenu={listItemsMenu}
+        client:only="vue"
+      />
+      <article class="content">
+        <h1>{frontmatter.title}</h1>
+        <slot />
+      </article>
+      <div class="pagination-container">
+        <Pagination
+          currentPath={pathname}
+          menuItems={listItemsMenu}
+          server:defer
+        />
+      </div>
+      <Sidebar items={listItemsMenu} client:only="vue" />
+      <footer>© 2024 Guía de Programación</footer>
+    </div>
+
+    <script>
+      import { $display } from "@/store/display";
+
+      $display.subscribe((value) => {
+        document.body.classList.toggle("dark", value.theme === "dark");
+      });
+    </script>
+    <style is:inline>
+      :root {
+        --bg-main: #ffffff;
+        --text-main: #333333;
+        --accent-primary: #007acc;
+        --accent-secondary: #4a90e2;
+        --accent-tertiary: #e6f3ff;
+      }
+
+      .dark {
+        --bg-main: #1e1e1e;
+        --text-main: #e0e0e0;
+        --accent-primary: #4a90e2;
+        --accent-secondary: #64b5f6;
+        --accent-tertiary: #2c3e50;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: "Source Sans Pro", sans-serif;
+        background-color: var(--bg-main);
+        color: var(--text-main);
+        line-height: 1.6;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
+      }
+
+      .wrapper {
+        min-height: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto auto;
+        grid-template-areas:
+          "header"
+          "breadcrumbs"
+          "content"
+          "pagination"
+          "footer";
+        transition: all 0.3s ease;
+      }
+
+      article.content {
+        grid-area: content;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .pagination-container {
+        grid-area: pagination;
+        padding: 0 1rem;
+      }
+
+      article ul {
+        margin-left: 0;
+      }
+
+      article li {
+        margin-left: 1rem;
+      }
+
+      aside {
+        grid-area: sidebar;
+        background-color: var(--accent-tertiary);
+        color: var(--text-main);
+        overflow-y: auto;
+        width: 0;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        transition: all 0.3s ease;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+      }
+
+      footer {
+        grid-area: footer;
+        background-color: var(--accent-primary);
+        color: var(--bg-main);
+        padding: 1rem;
+        text-align: center;
+      }
+
+      /* Typography styles */
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: var(--accent-primary);
+        margin-bottom: 1rem;
+      }
+
+      a {
+        color: var(--accent-secondary);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+        color: var(--accent-primary);
+      }
+
+      /* Breakpoints */
+      @media (min-width: 767px) {
+        .wrapper {
+          grid-template-columns: 0fr 1fr;
+          grid-template-areas:
+            "sidebar header"
+            "sidebar breadcrumbs"
+            "sidebar content"
+            "sidebar pagination"
+            "footer footer";
+        }
+        .wrapper.sidebar-visible {
+          grid-template-columns: 250px 1fr;
+        }
+        aside {
+          position: relative;
+          height: auto;
+        }
+      }
+
+      @media (min-width: 1920px) {
+        .wrapper.sidebar-visible {
+          grid-template-columns: 300px 1fr;
+        }
+        .wrapper.sidebar-visible aside {
+          width: 300px;
+        }
+      }
+
+      @media (min-width: 2560px) {
+        .wrapper.sidebar-visible {
+          grid-template-columns: 350px 1fr;
+        }
+        .wrapper.sidebar-visible aside {
+          width: 350px;
+        }
+      }
+    </style>
+  </body>
+</html>

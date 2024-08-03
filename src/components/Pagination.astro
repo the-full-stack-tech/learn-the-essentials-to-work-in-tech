@@ -1,0 +1,93 @@
+---
+// Pagination.astro
+const { currentPath, menuItems } = Astro.props;
+
+function flattenMenu(items) {
+  return items.reduce((acc, item) => {
+    acc.push(item);
+    if (item.children) {
+      acc.push(...flattenMenu(item.children));
+    }
+    return acc;
+  }, []);
+}
+
+const flatMenu = flattenMenu(menuItems);
+const currentIndex = flatMenu.findIndex((item) => item.url === currentPath);
+const previousPage = currentIndex > 0 ? flatMenu[currentIndex - 1] : null;
+const nextPage =
+  currentIndex < flatMenu.length - 1 ? flatMenu[currentIndex + 1] : null;
+
+function getPageTitle(page) {
+  return page.title || page.label;
+}
+---
+
+<nav class="pagination" aria-label="Navegación de páginas">
+  {
+    previousPage && (
+      <a
+        href={previousPage.url}
+        class="pagination-button previous"
+        title={getPageTitle(previousPage)}
+      >
+        <i class="i-mdi-chevron-left" />
+        <span>Anterior: {getPageTitle(previousPage)}</span>
+      </a>
+    )
+  }
+  {
+    nextPage && (
+      <a
+        href={nextPage.url}
+        class="pagination-button next"
+        title={getPageTitle(nextPage)}
+      >
+        <span>Siguiente: {getPageTitle(nextPage)}</span>
+        <i class="i-mdi-chevron-right" />
+      </a>
+    )
+  }
+</nav>
+
+<style>
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--accent-secondary);
+  }
+
+  .pagination-button {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: var(--accent-primary);
+    color: var(--bg-main);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+  }
+
+  .pagination-button:hover {
+    background-color: var(--accent-secondary);
+  }
+
+  .pagination-button.previous {
+    padding-left: 0.5rem;
+  }
+
+  .pagination-button.next {
+    padding-right: 0.5rem;
+  }
+
+  .pagination-button i {
+    font-size: 1.5rem;
+  }
+
+  .pagination-button span {
+    margin: 0 0.5rem;
+  }
+</style>

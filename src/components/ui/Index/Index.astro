@@ -1,0 +1,120 @@
+---
+import { generateIndex } from "@/utils/generateIndex";
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = "" } = Astro.props;
+
+const { pathname } = Astro.url;
+const allPages = await Astro.glob("@/pages/**/*.{md,mdx}");
+const index = generateIndex(allPages, pathname);
+console.log("pathname", pathname);
+console.log("index", JSON.stringify(index, null, 2));
+---
+
+<index-menu
+  class={`menu-container ${className}`}
+  data-index={JSON.stringify(index)}
+  data-pathname={pathname}
+>
+</index-menu>
+
+<script>
+  class IndexMenu extends HTMLElement {
+    constructor() {
+      super();
+
+      const index = JSON.parse(this.dataset.index);
+
+      const container = document.createElement("div");
+      container.innerHTML = `
+        <button class="toggle-index-btn" id="toggleIndexBtn">Ver índice</button>
+        <div class="index-content" style="display: none;">
+          ${this.renderMenuItems(index)}
+        </div>
+      `;
+
+      this.appendChild(container);
+
+      this.setupEventListeners();
+    }
+
+    renderMenuItems(items) {
+      return `
+        <ul class="menu-list">
+          ${items
+            .map(
+              (item) => `
+            <li class="menu-item">
+              <div class="menu-item-header">
+                <a href="${item.url}">${item.label}</a>
+              </div>
+              ${
+                item.children && item.children.length > 0
+                  ? `<div class="submenu">${this.renderMenuItems(item.children)}</div>`
+                  : ""
+              }
+            </li>
+          `
+            )
+            .join("")}
+        </ul>
+      `;
+    }
+
+    setupEventListeners() {
+      const toggleIndexBtn = this.querySelector("#toggleIndexBtn");
+      const indexContent = this.querySelector(".index-content");
+      let isVisible = false;
+
+      toggleIndexBtn.addEventListener("click", () => {
+        isVisible = !isVisible;
+        indexContent.style.display = isVisible ? "block" : "none";
+        toggleIndexBtn.textContent = isVisible
+          ? "Ocultar índice"
+          : "Ver índice";
+      });
+    }
+  }
+
+  customElements.define("index-menu", IndexMenu);
+</script>
+
+<style is:global>
+  .menu-container {
+    border-radius: 8px;
+  }
+  .menu-list {
+    list-style-type: none;
+    padding-left: 0;
+  }
+  .menu-item {
+    /* margin-bottom: 8px; */
+  }
+  .menu-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #e9ecef;
+    padding: 8px 16px;
+    border-radius: 4px;
+  }
+  .menu-item-header a {
+    text-decoration: none;
+    color: #495057;
+  }
+  .submenu {
+    padding-left: 16px;
+  }
+  .toggle-index-btn {
+    margin-bottom: 16px;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+</style>
